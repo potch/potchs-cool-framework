@@ -1,0 +1,97 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+body {
+  font-family: sans-serif;
+}
+
+button::-moz-focus-inner {
+  border: 0;
+  padding: 0;
+}
+button {
+  font: inherit;
+  font-size: inherit;
+}
+button.icon {
+  font-size: 1.5em;
+  appearance: none;
+  padding: 1rem;
+  border: 0 none;
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 35rem;
+  max-width: 100%;
+  margin-inline: auto;
+  padding: 1em;
+}
+
+header {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 0;
+  justify-content: space-between;
+}
+
+a.active {
+  font-weight: bold;
+}
+
+.content,
+.todos,
+form {
+  display: grid;
+  gap: 1rem;
+}
+
+.todos {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+.todo {
+  display: grid;
+  list-style-type: none;
+  background: #f8f8f8;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  padding-inline: 1em 0;
+  gap: 2em;
+  height: 3em;
+}
+.todo [type="checkbox"] {
+  transform: scale(1.5);
+  border-radius: 0;
+  border: 0 none;
+  width: 1em;
+  height: 1em;
+}
+.todo [type="text"] {
+  margin-inline: calc(-0.5rem - 1px);
+}
+
+form {
+  grid-template-columns: 1fr auto;
+}
+
+input[type="text"] {
+  padding: 0.5rem;
+  font-size: inherit;
+  font: inherit;
+  width: auto;
+  min-width: 0;
+}
