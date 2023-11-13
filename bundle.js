@@ -1,4 +1,41 @@
+// reactive value source thingy
+const signal = (value) => {
+  let subs = new Set();
+  return {
+    get value() {
+      return value;
+    },
+    set value(v) {
+      if (value !== v) {
+        value = v;
+        subs.forEach((s) => s(value));
+      }
+    },
+    watch(fn, runNow = false) {
+      subs.add(fn);
+      if (runNow) fn(value);
+      return () => subs.delete(fn);
+    },
+  };
+};
+
+// side effect
+const effect = (fn, ...deps) => {
+  let update = () => fn(...deps.map((d) => d.value));
+  let subs = deps.map((dep) => dep.watch(update));
+  return [update, () => subs.forEach((f) => f())];
+};
+
+// derived reactive value thingy
+const computed = (fn, ...deps) => {
+  let s = signal();
+  let [update] = effect((...vals) => (s.value = fn(...vals)), ...deps);
+  update();
+  return s;
+};
+
 // potch's cool framework!
+
 
 let doc = globalThis.document;
 
@@ -7,52 +44,18 @@ let doc = globalThis.document;
 const FUNCTION = "function";
 const UNDEF = "undefined";
 const is = (v, t) => typeof v === t;
+
+// dom stuff
+const $ = (selector, scope = doc) => scope.querySelector(selector);
 const on = (el, event, options) => (
   el.addEventListener(event, options),
   () => el.removeEventListener(event, options)
 );
 
-// reactive thingies
-
-// reactive value source thingy
-const signal = (value) => {
-  const subs = new Set();
-  const set = (v) => {
-    value = v;
-    subs.forEach((s) => s(value));
-  };
-  return {
-    get value() {
-      return value;
-    },
-    set value(v) {
-      if (value !== v) set(v);
-    },
-    watch(fn) {
-      subs.add(fn);
-      return () => subs.delete(fn);
-    },
-    compute(fn) {
-      return computed(fn, this);
-    },
-    switch(t, f) {
-      return this.compute((v) =>
-        v ? (is(t, FUNCTION) ? t(v) : t) : is(f, FUNCTION) ? f(v) : f
-      );
-    },
-  };
-};
-
-// derived reactive thingy
-const computed = (fn, ...deps) => {
-  const update = () => fn(...deps.map((d) => d.value));
-  const s = signal(update());
-
-  // watch referenced signals and recompute
-  deps.forEach((dep) => dep.watch(() => (s.value = update())));
-
-  return s;
-};
+const tf = (s, t, f) =>
+  computed((v) =>
+    v ? (is(t, FUNCTION) ? t(v) : t) : is(f, FUNCTION) ? f(v) : f
+  , s);
 
 // helper for object signals, to make props computed signals
 const record = (sig) => {
@@ -62,7 +65,7 @@ const record = (sig) => {
       if (!memo.has(f)) {
         memo.set(
           f,
-          s.compute((v) => v && v[f])
+          computed((v) => v && v[f], s)
         );
       }
       return memo.get(f);
@@ -216,7 +219,7 @@ const Route = ({ match, pattern, handler }, ...children) => {
     if (isActive) {
       routeResponded.value = true;
     }
-  });
+  }, true);
 
   if (paramTokens.length) {
     active.watch((isActive) => {
@@ -268,7 +271,7 @@ const Todo = ({ todo, index }) => {
       checked: r.done,
       onclick: (e) => updateTodo(index, { done: !!e.target.checked }),
     }),
-    r.editing.switch(
+    tf(r.editing,
       (t) =>
         dom.input({
           type: "text",
@@ -290,7 +293,7 @@ const Todo = ({ todo, index }) => {
           r.text
         )
     ),
-    r.done.switch((t) =>
+    tf(r.done,(t) =>
       dom.button({ class: "icon", onclick: () => deleteTodo(todo) }, "🗑️")
     )
   );
@@ -332,16 +335,18 @@ const App = () =>
 
 location.value = new URL(window.location);
 
-let initialData;
-try {
-  initialData = JSON.parse(localStorage.getItem("todos"));
-} catch (e) {}
+todos.value = JSON.parse($('[data-signal="todos"]').innerText);
 
-todos.value = initialData || [
-  { text: "first", done: false },
-  { text: "second", done: true },
-];
-
-todos.watch((o) => localStorage.setItem("todos", JSON.stringify(o)));
-
-document.body.replaceChildren(App());
+fetch("/todos").then(r => r.json()).then(t => {
+  todos.value = t;
+  
+  todos.watch((o) => {
+    localStorage.setItem("todos", JSON.stringify(o));
+    fetch("/todos", {
+      method: "post",
+      body: JSON.stringify(o.map(({ text, done }) => ({ text, done }))),
+    });
+  });
+  
+  document.body.replaceChildren(App());
+});

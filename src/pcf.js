@@ -1,5 +1,7 @@
 // potch's cool framework!
 
+import { computed } from "./signal.js";
+
 let doc = globalThis.document;
 export const setDoc = (d) => (doc = d);
 
@@ -19,48 +21,10 @@ export const on = (el, event, options) => (
   () => el.removeEventListener(event, options)
 );
 
-// reactive thingies
-
-// reactive value source thingy
-export const signal = (value) => {
-  const subs = new Set();
-  const set = (v) => {
-    value = v;
-    subs.forEach((s) => s(value));
-  };
-  return {
-    get value() {
-      return value;
-    },
-    set value(v) {
-      if (value !== v) set(v);
-    },
-    watch(fn, runNow = false) {
-      subs.add(fn);
-      if (runNow) fn(value);
-      return () => subs.delete(fn);
-    },
-    compute(fn) {
-      return computed(fn, this);
-    },
-    switch(t, f) {
-      return this.compute((v) =>
-        v ? (is(t, FUNCTION) ? t(v) : t) : is(f, FUNCTION) ? f(v) : f
-      );
-    },
-  };
-};
-
-// derived reactive thingy
-export const computed = (fn, ...deps) => {
-  const update = () => fn(...deps.map((d) => d.value));
-  const s = signal(update());
-
-  // watch referenced signals and recompute
-  deps.forEach((dep) => dep.watch(() => (s.value = update())));
-
-  return s;
-};
+export const tf = (s, t, f) =>
+  computed((v) =>
+    v ? (is(t, FUNCTION) ? t(v) : t) : is(f, FUNCTION) ? f(v) : f
+  , s);
 
 // helper for object signals, to make props computed signals
 export const record = (sig) => {
@@ -70,7 +34,7 @@ export const record = (sig) => {
       if (!memo.has(f)) {
         memo.set(
           f,
-          s.compute((v) => v && v[f])
+          computed((v) => v && v[f], s)
         );
       }
       return memo.get(f);

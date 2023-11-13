@@ -23,24 +23,28 @@ const nodeMock = {
     }
   },
   get outerHTML() {
+    let indent = "    ";
+    for (let n = this; n.parentNode; n = n.parentNode ) {
+      indent+= "  "
+    }
     switch (this.nodeType) {
       case 1:
         return (
-          "<" +
+          indent + "<" +
           this.tagName +
           [...this.attributes]
             .map(([a, v]) => ` ${a}="${v.toString()}"`)
             .join("") +
           (this.childNodes.length
-            ? ">" +
-              this.childNodes.map((n) => n.outerHTML).join("") +
-              "</" +
+            ? ">\n" +
+              this.childNodes.map((n) => n.outerHTML).join("\n") +
+              "\n" + indent + "</" +
               this.tagName +
               ">"
             : "/>")
         );
       case 3:
-        return this.textContent;
+        return indent + this.textContent;
     }
     return "";
   },
@@ -63,3 +67,8 @@ export const document = {
   createComment,
   body: createElement("body"),
 };
+
+export const serializeSignal = (name, s) =>
+  `<script type="application/json" data-signal="${name}">${JSON.stringify(
+    s.value
+  )}</script>`;

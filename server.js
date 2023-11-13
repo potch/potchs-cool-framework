@@ -1,18 +1,19 @@
 import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
-import { resolve, extname } from "node:path";
+import { resolve, extname, basename } from "node:path";
 
-import { setDoc } from "./pcf.js";
-import { location, routeResponded } from "./router.js";
-import { document as mockDoc } from "./ssr.js";
+import { setDoc } from "./src/pcf.js";
+import { location, routeResponded } from "./src/router.js";
+import { document as mockDoc, serializeSignal } from "./src/ssr.js";
 setDoc(mockDoc);
 
-import { App } from "./src/app.js";
-import { todos } from "./src/todos.js";
+import { App } from "./demo/app.js";
+import { todos } from "./demo/todos.js";
 
 todos.value = [
   { text: "first", done: false },
   { text: "second", done: true },
+  { text: "Though all human population of old together; for sinful men, spring there, with plenty of ruin", done: false }
 ];
 
 const render = () => `
@@ -23,10 +24,11 @@ const render = () => `
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>app thing</title>
     <link rel="stylesheet" href="/style.css" />
-    <script type="module" src="/index.js"></script>
+    <script type="module" src="/bundle.min.js"></script>
   </head>
   <body>
-    ${App().outerHTML}
+${App().outerHTML}
+    ${serializeSignal('todos', todos)}
   </body>
 </html>
 `;
@@ -59,10 +61,10 @@ const server = createServer(async (req, res) => {
       try {
         todos.value = JSON.parse((await body).toString("utf8"));
         res.statusCode = 204;
-        res.end();
+        return res.end();
       } catch (e) {
         res.statusCode = 500;
-        res.end(e);
+        return res.end(e.message);
       }
     }
   }
@@ -77,14 +79,18 @@ const server = createServer(async (req, res) => {
         console.log("maybe file");
         const filePath = resolve(".", url.pathname.slice(1));
         const content = readFileSync(filePath);
-        const ext = extname(filePath).slice(1);
+        let ext = extname(filePath).slice(1);
+        if (ext === 'gz') {
+          res.setHeader("Content-Encoding", "gzip");
+          ext = extname(basename(filePath, '.gz')).slice(1);
+        }
         if (ext in MIMES) {
           res.setHeader("Content-Type", MIMES[ext]);
         }
         return res.end(content);
       } catch (e) {
         res.statusCode = "404";
-        res.end("Not Found");
+        return res.end("Not Found");
       }
     }
 

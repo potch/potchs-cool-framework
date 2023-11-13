@@ -1,4 +1,6 @@
-import { dom as _, signal, record } from "../pcf.js";
+import { dom as _, record } from "../src/pcf.js";
+import { signal } from "../src/signal.js";
+import { tf } from "../src/pcf.js";
 import { updateTodo, deleteTodo } from "./todos.js";
 
 export const Todo = ({ todo, index }) => {
@@ -12,7 +14,7 @@ export const Todo = ({ todo, index }) => {
       checked: r.done,
       onclick: (e) => updateTodo(index, { done: !!e.target.checked }),
     }),
-    r.editing.switch(
+    tf(r.editing,
       (t) =>
         _.input({
           type: "text",
@@ -34,7 +36,7 @@ export const Todo = ({ todo, index }) => {
           r.text
         )
     ),
-    r.done.switch((t) =>
+    tf(r.done,(t) =>
       _.button({ class: "icon", onclick: () => deleteTodo(todo) }, "🗑️")
     )
   );

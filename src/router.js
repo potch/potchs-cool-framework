@@ -1,4 +1,5 @@
-import { signal, computed, record, on, dom } from "./pcf.js";
+import { signal, computed } from "./signal.js";
+import { record, on, dom } from "./pcf.js";
 
 export const location = signal();
 const paramsRoot = signal({});

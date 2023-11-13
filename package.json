@@ -5,13 +5,13 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "run-p serve watch",
-    "watch": "onchange -ik '**/*.js' -e 'bundle*.js' -- npm run build",
-    "serve": "npx @potch/tinyserve -w .",
+    "start": "npm run watch",
+    "watch": "onchange -ik 'demo/*.js' 'src/*.js' 'server.js' -- run-p build serve",
+    "serve": "node server.js",
     "build": "run-s rollup minify gzip",
-    "rollup": "npx rollup index.js --format es --file bundle.js",
+    "rollup": "npx rollup demo/index.js --format es --file bundle.js",
     "minify": "npx terser --compress --mangle --module --ecma 2020 -o bundle.min.js -- bundle.js",
-    "gzip": "gzip < bundle.min.js > bundle.min.js.gz && ls -lh *.js*"
+    "gzip": "gzip < bundle.min.js > bundle.min.js.gz && ls -lh bundle*"
   },
   "keywords": [],
   "author": "",

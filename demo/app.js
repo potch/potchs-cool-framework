@@ -1,5 +1,6 @@
-import { dom as _, computed } from "../pcf.js";
-import { Route, Link } from "../router.js";
+import { dom as _ } from "../src/pcf.js";
+import { computed } from "../src/signal.js";
+import { Route, Link } from "../src/router.js";
 import { addTodo, todos } from "./todos.js";
 import { Todo } from "./todo.js";
 

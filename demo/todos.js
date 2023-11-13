@@ -1,4 +1,4 @@
-import { signal } from "../pcf.js";
+import { signal } from "../src/signal.js";
 
 export const todos = signal([]);
 
